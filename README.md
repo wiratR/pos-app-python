@@ -4,6 +4,7 @@
 pyenv local 3.10.3
 python -m venv venv 
 source venv/bin/activate
+python app.py
 ```
 
 

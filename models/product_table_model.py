@@ -42,6 +42,12 @@ class ProductTableModel(QAbstractTableModel):
     def get_product_id(self, row: int) -> int:
         return self._products[row]["id"]
 
+    def get_product_list_for_order(self) -> List[tuple[str, float]]:
+        """
+        Returns a list of (name, price) tuples for use in order dialogs.
+        """
+        return [(p["name"], p["price"]) for p in self._products]
+
     def update_product(self, product_id: int, name: str, description: str, price: float):
         self.product_model.update_product(product_id, name, description, price)
         self._products = self.product_model.get_all_products()  # refresh data

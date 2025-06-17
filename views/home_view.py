@@ -14,7 +14,8 @@ from PyQt6.uic import loadUi
 from models.product_model import ProductModel
 from models.product_table_model import ProductTableModel
 from views.add_product_dialog import AddProductDialog   # import the dialog
-from views.edit_product_dialog import EditProductDialog  # import the dialog
+from views.edit_product_dialog import EditProductDialog
+from views.order_product_dialog import OrderProductDialog  # import the dialog
 
 
 def resource_path(relative_path):
@@ -70,6 +71,9 @@ class HomeView(QMainWindow):
         # Add product button
         self.addButton: QPushButton = self.findChild(QPushButton, "addButton")
         self.addButton.clicked.connect(self.add_product)
+
+        # Load product names for order dialog
+        self.pushButtonOrder.clicked.connect(self.open_order_dialog)
 
         # === Clock update ===
         self.timer = QTimer(self)
@@ -138,35 +142,9 @@ class HomeView(QMainWindow):
                     dialog.description,
                     dialog.price
                 )
-
             # Refresh the view
             model.layoutChanged.emit()
 
-    # def add_product(self):
-    #     name, ok1 = QInputDialog.getText(self, "เพิ่มสินค้า", "ชื่อสินค้า:")
-    #     if not ok1 or not name:
-    #         return
-
-    #     description, ok2 = QInputDialog.getText(self, "เพิ่มสินค้า", "รายละเอียดสินค้า:")
-    #     if not ok2:
-    #         return
-
-    #     price_str, ok3 = QInputDialog.getText(self, "เพิ่มสินค้า", "ราคาสินค้า:")
-    #     if not ok3:
-    #         return
-
-    #     try:
-    #         price = float(price_str)
-    #     except ValueError:
-    #         QMessageBox.warning(self, "ข้อผิดพลาด", "กรุณาระบุราคาเป็นตัวเลข")
-    #         return
-
-    #     # Add to DB and refresh table
-    #     self.tableView.model().product_model.add_product(name, description, price)
-    #     self.tableView.model()._products = self.tableView.model().product_model.get_all_products()
-    #     self.tableView.model().layoutChanged.emit()
-
-    #     QMessageBox.information(self, "เพิ่มสินค้า", "เพิ่มสินค้าเรียบร้อยแล้ว")
     def add_product(self):
         dialog = AddProductDialog(self)
         if dialog.exec():
@@ -179,3 +157,32 @@ class HomeView(QMainWindow):
             model.layoutChanged.emit()
 
             QMessageBox.information(self, "เพิ่มสินค้า", "เพิ่มสินค้าเรียบร้อยแล้ว")
+
+    def load_product_names(self):
+        model = self.tableView.model()
+        products = []
+        for row in range(model.rowCount()):
+            # assuming product name is in column 0
+            index = model.index(row, 0)
+            product_name = model.data(index)
+            products.append(product_name)
+        return products
+
+    def open_order_dialog(self):
+        order_id = self.lineEditOrderId.text().strip()
+        if not order_id:
+            QMessageBox.warning(self, "ข้อผิดพลาด", "กรุณากรอกเลขที่คำสั่งซื้อก่อนทำรายการ")
+            return
+
+        product_list = self.tableView.model().get_product_list_for_order()
+        dialog = OrderProductDialog(product_list, order_id, self)
+        if dialog.exec():
+            # Optionally handle the confirmed order here
+            pass
+
+    # def open_order_dialog(self):
+    #     product_list = self.tableView.model().get_product_list_for_order()
+    #     dialog = OrderProductDialog(product_list, orderId, self)
+    #     if dialog.exec():
+    #         # handle confirmed order if needed
+    #         pass

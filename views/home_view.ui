@@ -52,16 +52,16 @@
              <string>สิ้นค้า</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_2">
-                <item>
-                <widget class="QTableView" name="tableView_2"/>
-                </item>
-                <item>
-                <widget class="QPushButton" name="addButton">
-                    <property name="text">
-                    <string>➕ เพิ่มสินค้า</string>
-                    </property>
-                </widget>
-                </item>
+             <item>
+              <widget class="QTableView" name="tableView_2"/>
+             </item>
+             <item>
+              <widget class="QPushButton" name="addButton">
+               <property name="text">
+                <string>➕ เพิ่มสินค้า</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </item>
@@ -73,10 +73,10 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEdit_3"/>
+           <widget class="QLineEdit" name="lineEditOrderId"/>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton_3">
+           <widget class="QPushButton" name="pushButtonOrder">
             <property name="text">
              <string>สั่งซื้อสินค้า</string>
             </property>
@@ -137,48 +137,55 @@
          </attribute>
          <layout class="QVBoxLayout" name="tab3Layout"/>
         </widget>
-       </widget>
-      </item>
-      <item>
-       <widget class="QGroupBox" name="groupBox">
-        <property name="font">
-         <font>
-          <family>Arial</family>
-          <pointsize>14</pointsize>
-         </font>
-        </property>
-        <property name="title">
-         <string>คำนวนต้นทุนสิ้นค้า</string>
-        </property>
-        <layout class="QVBoxLayout" name="groupBoxLayout">
-         <item>
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>สิ้นค้า</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QSpinBox" name="spinBox"/>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_2">
-           <property name="text">
-            <string>ราคาขาย</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="lineEdit"/>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pushButton_4">
-           <property name="text">
-            <string>คำนวณ</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
+        <widget class="QWidget" name="tab4">
+         <attribute name="title">
+          <string>คำนวณต้นทุน</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="tab4Layout">
+          <item>
+           <widget class="QGroupBox" name="groupBox">
+            <property name="font">
+             <font>
+              <family>Arial</family>
+              <pointsize>14</pointsize>
+             </font>
+            </property>
+            <property name="title">
+             <string>คำนวนต้นทุนสิ้นค้า</string>
+            </property>
+            <layout class="QVBoxLayout" name="groupBoxLayout">
+             <item>
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>สิ้นค้า</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="spinBox"/>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_2">
+               <property name="text">
+                <string>ราคาขาย</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="lineEdit"/>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButton_4">
+               <property name="text">
+                <string>คำนวณ</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </item>
      </layout>
