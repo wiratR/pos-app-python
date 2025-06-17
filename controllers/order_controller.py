@@ -41,3 +41,7 @@ class OrderController:
 
         self.model.add_order_items(order_id, items)
         return order_id
+    
+    def get_all_orders(self):
+        return self.model.get_all_orders()
+    #         return cursor.fetchall()

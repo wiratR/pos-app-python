@@ -58,3 +58,20 @@ class OrderModel:
         """, [(order_id, product_id, qty, subtotal) for product_id, qty, subtotal in items])
         conn.commit()
         conn.close()
+
+    def get_all_orders(self):
+        conn = self.connect()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT o.order_no, o.order_date, o.delivery_date, c.company_name, o.total_amount
+            FROM orders o
+            JOIN customers c ON o.customer_id = c.id
+            ORDER BY o.order_date DESC
+        """)
+
+        columns = [column[0] for column in cursor.description]
+        orders = [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+        conn.close()
+        return orders

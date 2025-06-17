@@ -4,18 +4,19 @@ import logging
 from datetime import datetime
 from PyQt6.QtWidgets import (
     QMainWindow, QLabel, QGroupBox, QSpinBox,
-    QLineEdit, QPushButton, QMessageBox, QCalendarWidget, QTableView,
-    QInputDialog
+    QLineEdit, QPushButton, QMessageBox, QCalendarWidget, QTableView
 )
 from PyQt6.QtCore import QTimer, QModelIndex
 from PyQt6.uic import loadUi
 
-# 👇 Add import for product model
+from delegates.button_delegate import ModernButtonDelegate  
 from models.product_model import ProductModel
 from models.product_table_model import ProductTableModel
-from views.add_product_dialog import AddProductDialog   # import the dialog
+from views.add_product_dialog import AddProductDialog
 from views.edit_product_dialog import EditProductDialog
-from views.order_product_dialog import OrderProductDialog  # import the dialog
+from views.order_product_dialog import OrderProductDialog 
+from controllers.order_controller import OrderController
+from models.order_table_model import OrderTableModel  # ⬅️ new model
 
 
 def resource_path(relative_path):
@@ -33,6 +34,8 @@ class HomeView(QMainWindow):
         logging.info("🔧 Loading HomeView UI from %s", ui_file)
 
         self.showFullScreen()  # 👈 This line enables full-screen view
+
+        self.orderController = OrderController()  # ⬅️ initialize controller
 
         # === Widgets ===
         self.datetimeLabel: QLabel = self.findChild(QLabel, "datetimeLabel")
@@ -74,6 +77,20 @@ class HomeView(QMainWindow):
 
         # Load product names for order dialog
         self.pushButtonOrder.clicked.connect(self.open_order_dialog)
+
+        # === Order TableView for tab ใบส่งของ ===
+        self.orderTableView: QTableView = self.findChild(QTableView, "tableView")  # This is from tab2
+        self.load_order_data()
+
+
+        # ใช้ ModernButtonDelegate
+        delegate = ModernButtonDelegate(self.orderTableView)
+        delegate.button_signal.clicked.connect(self.on_order_button_row_clicked)  # 👈 connect signal
+        self.orderTableView.setItemDelegateForColumn(5, delegate)
+
+        # ขนาดของแถว
+        self.orderTableView.verticalHeader().setDefaultSectionSize(40)
+        self.orderTableView.resizeColumnsToContents()
 
         # === Clock update ===
         self.timer = QTimer(self)
@@ -180,9 +197,27 @@ class HomeView(QMainWindow):
             # Optionally handle the confirmed order here
             pass
 
-    # def open_order_dialog(self):
-    #     product_list = self.tableView.model().get_product_list_for_order()
-    #     dialog = OrderProductDialog(product_list, orderId, self)
-    #     if dialog.exec():
-    #         # handle confirmed order if needed
-    #         pass
+    def load_order_data(self):
+        orders = self.orderController.get_all_orders()
+        table_model = OrderTableModel(orders)
+        self.orderTableView.setModel(table_model)
+        self.orderTableView.resizeColumnsToContents()
+
+    def on_order_button_row_clicked(self, row: int):
+        model = self.orderTableView.model()
+        order = model.orders[row]
+
+        # ตัวอย่าง items (ควรดึงจาก DB)
+        items = [
+            {"product": "สินค้า A", "qty": 2, "price": 50.0},
+            {"product": "สินค้า B", "qty": 1, "price": 100.0}
+        ]
+
+        try:
+            from utils.generate_delivery_pdf import generate_delivery_pdf
+            output_path = os.path.join("output", f"ใบส่งของ_{order['order_no']}.pdf")
+            os.makedirs("output", exist_ok=True)
+            generate_delivery_pdf(order, items, output_path)
+            QMessageBox.information(self, "สำเร็จ", f"สร้าง PDF ที่ {output_path}")
+        except Exception as e:
+            QMessageBox.critical(self, "ผิดพลาด", f"ไม่สามารถสร้างใบส่งของได้: {e}")
