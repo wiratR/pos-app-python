@@ -1,17 +1,18 @@
 import sys
+import os
+import shutil
 import fitz  # PyMuPDF
 from PyQt6.QtWidgets import (
     QApplication, QLabel, QMainWindow, QScrollArea, QVBoxLayout, QWidget,
-    QPushButton, QFileDialog, QHBoxLayout
+    QPushButton, QFileDialog, QHBoxLayout, QMessageBox
 )
 from PyQt6.QtGui import QPixmap, QImage
 from PyQt6.QtCore import Qt, QTimer, QSize
 
-
 class PDFViewer(QMainWindow):
     def __init__(self, pdf_path):
         super().__init__()
-        self.setWindowTitle("PDF Viewer")
+        self.setWindowTitle("แสดงผลรายงาน PDF")
         
         # ลดขนาดหน้าต่างลงเหลือ 75% ของขนาดหน้าจอ
         screen = QApplication.primaryScreen()
@@ -28,7 +29,7 @@ class PDFViewer(QMainWindow):
 
         # ปุ่ม Save as
         button_layout = QHBoxLayout()
-        save_button = QPushButton("Save as")
+        save_button = QPushButton("บันทึก ... (Save As)")
         save_button.clicked.connect(self.save_as)
         button_layout.addStretch()
         button_layout.addWidget(save_button)
@@ -73,9 +74,7 @@ class PDFViewer(QMainWindow):
         ))
 
     def save_as(self):
-        # เปิด dialog ให้เลือก save path
-        options = QFileDialog.Options()
-        options |= QFileDialog.Option.DontUseNativeDialog
+        options = QFileDialog.Option.DontUseNativeDialog
         file_path, _ = QFileDialog.getSaveFileName(
             self,
             "Save PDF as",
@@ -85,9 +84,26 @@ class PDFViewer(QMainWindow):
         )
         if file_path:
             try:
-                # คัดลอกไฟล์ pdf ไปยัง path ที่เลือก
-                import shutil
+                if not os.path.exists(self.pdf_path):
+                    QMessageBox.critical(self, "Error", f"ไม่พบไฟล์ต้นฉบับ: {self.pdf_path}")
+                    return
+                
+                if os.path.abspath(self.pdf_path) == os.path.abspath(file_path):
+                    QMessageBox.warning(self, "Warning", "ไม่สามารถบันทึกทับไฟล์เดิมได้")
+                    return
+
                 shutil.copyfile(self.pdf_path, file_path)
+                QMessageBox.information(self, "สำเร็จ", f"บันทึกไฟล์สำเร็จที่:\n{file_path}")
             except Exception as e:
-                from PyQt6.QtWidgets import QMessageBox
                 QMessageBox.critical(self, "Error", f"ไม่สามารถบันทึกไฟล์ได้: {e}")
+
+
+
+
+
+
+
+
+
+
+

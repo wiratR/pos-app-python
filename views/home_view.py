@@ -19,13 +19,7 @@ from views.order_product_dialog import OrderProductDialog
 from controllers.order_controller import OrderController
 from models.order_table_model import OrderTableModel  # ⬅️ new model
 from views.pdf_viewer import PDFViewer  # ⬅️ new PDF viewer
-
-
-def resource_path(relative_path):
-    """Get absolute path to resource, works for dev and for PyInstaller."""
-    base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
-    return os.path.join(base_path, relative_path)
-
+from utils.path_utils import resource_path
 
 class HomeView(QMainWindow):
     def __init__(self):
@@ -236,9 +230,6 @@ class HomeView(QMainWindow):
 
             self.pdf_viewer = PDFViewer(output_path)
             self.pdf_viewer.show()
-
-            # self.pdf_viewer = PDFViewer(output_path, fullscreen=False)
-            # self.pdf_viewer.show()
 
         except Exception as e:
             logging.error(f"❌ เกิดข้อผิดพลาดขณะสร้างใบส่งของ: {e}", exc_info=True)
