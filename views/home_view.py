@@ -12,11 +12,13 @@ from PyQt6.uic import loadUi
 from delegates.button_delegate import ModernButtonDelegate  
 from models.product_model import ProductModel
 from models.product_table_model import ProductTableModel
+from utils.generate_delivery_pdf import generate_delivery_pdf
 from views.add_product_dialog import AddProductDialog
 from views.edit_product_dialog import EditProductDialog
 from views.order_product_dialog import OrderProductDialog 
 from controllers.order_controller import OrderController
 from models.order_table_model import OrderTableModel  # ⬅️ new model
+from views.pdf_viewer import PDFViewer  # ⬅️ new PDF viewer
 
 
 def resource_path(relative_path):
@@ -87,6 +89,10 @@ class HomeView(QMainWindow):
         delegate = ModernButtonDelegate(self.orderTableView)
         delegate.button_signal.clicked.connect(self.on_order_button_row_clicked)  # 👈 connect signal
         self.orderTableView.setItemDelegateForColumn(5, delegate)
+
+        # delegate = ModernButtonDelegate(self.orderTableView)
+        # delegate.button_signal.clicked.connect(self.on_order_button_row_clicked)
+        # self.orderTableView.setItemDelegateForColumn(5, delegate)
 
         # ขนาดของแถว
         self.orderTableView.verticalHeader().setDefaultSectionSize(40)
@@ -204,20 +210,36 @@ class HomeView(QMainWindow):
         self.orderTableView.resizeColumnsToContents()
 
     def on_order_button_row_clicked(self, row: int):
+        logging.info(f"🧾 เริ่มสร้างใบส่งของจากแถวที่: {row}")
+
         model = self.orderTableView.model()
         order = model.orders[row]
 
-        # ตัวอย่าง items (ควรดึงจาก DB)
         items = [
             {"product": "สินค้า A", "qty": 2, "price": 50.0},
             {"product": "สินค้า B", "qty": 1, "price": 100.0}
         ]
 
         try:
-            from utils.generate_delivery_pdf import generate_delivery_pdf
-            output_path = os.path.join("output", f"ใบส่งของ_{order['order_no']}.pdf")
             os.makedirs("output", exist_ok=True)
+            order_no = order.get("order_no", f"no-id-{datetime.now().timestamp()}")
+            # use resource_path
+            output_dir = os.path.abspath("output")
+            os.makedirs(output_dir, exist_ok=True)
+            output_path = os.path.join(output_dir, f"ใบส่งของ_{order_no}.pdf")
+            # output_path = os.path.join("output", f"ใบส่งของ_{order_no}.pdf")
+            logging.info(f"📄 สร้างไฟล์ PDF ที่: {output_path}")
+
             generate_delivery_pdf(order, items, output_path)
-            QMessageBox.information(self, "สำเร็จ", f"สร้าง PDF ที่ {output_path}")
+
+            logging.info("✅ สร้างใบส่งของ PDF เสร็จสมบูรณ์")
+
+            self.pdf_viewer = PDFViewer(output_path)
+            self.pdf_viewer.show()
+
+            # self.pdf_viewer = PDFViewer(output_path, fullscreen=False)
+            # self.pdf_viewer.show()
+
         except Exception as e:
+            logging.error(f"❌ เกิดข้อผิดพลาดขณะสร้างใบส่งของ: {e}", exc_info=True)
             QMessageBox.critical(self, "ผิดพลาด", f"ไม่สามารถสร้างใบส่งของได้: {e}")
