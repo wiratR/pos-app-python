@@ -38,14 +38,14 @@ class OrderModel:
         conn.close()
         return customer_id
 
-    def create_order(self, order_no, order_date, delivery_date, customer_id, total_amount):
+    def create_order(self, order_no, order_date, delivery_date, customer_id, total_amount, payment_status='unpaid'):
         conn = self.connect()
         cursor = conn.cursor()
 
         cursor.execute("""
-            INSERT INTO orders (order_no, order_date, delivery_date, customer_id, total_amount)
-            VALUES (?, ?, ?, ?, ?)
-        """, (order_no, order_date, delivery_date, customer_id, total_amount))
+            INSERT INTO orders (order_no, order_date, delivery_date, customer_id, total_amount, order_payment_status)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (order_no, order_date, delivery_date, customer_id, total_amount, payment_status))
         order_id = cursor.lastrowid
         conn.commit()
         conn.close()
@@ -66,7 +66,13 @@ class OrderModel:
         cursor = conn.cursor()
 
         cursor.execute("""
-            SELECT o.order_no, o.order_date, o.delivery_date, c.company_name, o.total_amount
+            SELECT 
+                o.order_no, 
+                o.order_date, 
+                o.delivery_date, 
+                c.company_name, 
+                o.total_amount,
+                o.order_payment_status
             FROM orders o
             JOIN customers c ON o.customer_id = c.id
             ORDER BY o.order_date DESC
@@ -77,3 +83,16 @@ class OrderModel:
 
         conn.close()
         return orders
+
+    def update_payment_status(self, order_no, new_status):
+        conn = self.connect()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            UPDATE orders
+            SET order_payment_status = ?
+            WHERE order_no = ?
+        """, (new_status, order_no))
+
+        conn.commit()
+        conn.close()

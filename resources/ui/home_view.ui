@@ -34,9 +34,10 @@
         <property name="currentIndex">
          <number>0</number>
         </property>
+        <!-- Tab 1: สินค้า -->
         <widget class="QWidget" name="tab1">
          <attribute name="title">
-          <string>สิ้นค้า</string>
+          <string>สินค้า</string>
          </attribute>
          <layout class="QVBoxLayout" name="tab1Layout">
           <item>
@@ -50,7 +51,7 @@
              </font>
             </property>
             <property name="title">
-             <string>สิ้นค้า</string>
+             <string>สินค้า</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_2">
              <item>
@@ -85,6 +86,9 @@
           </item>
          </layout>
         </widget>
+        <!-- End of tab1 -->
+
+        <!-- Tab 2: ใบส่งของ -->
         <widget class="QWidget" name="tab2">
          <attribute name="title">
           <string>ใบส่งของ</string>
@@ -133,61 +137,159 @@
           </item>
          </layout>
         </widget>
+        <!-- End of tab2 -->
+
+        <!-- Tab 3: ใบกำกับภาษี -->
         <widget class="QWidget" name="tab3">
          <attribute name="title">
           <string>ใบกำกับภาษี</string>
          </attribute>
-         <layout class="QVBoxLayout" name="tab3Layout"/>
-        </widget>
-        <widget class="QWidget" name="tab4">
-         <attribute name="title">
-          <string>คำนวณต้นทุน</string>
-         </attribute>
-         <layout class="QVBoxLayout" name="tab4Layout">
+         <layout class="QVBoxLayout" name="tab3Layout">
           <item>
-           <widget class="QGroupBox" name="groupBox">
+           <widget class="QLabel" name="label_invoice_number">
             <property name="font">
              <font>
               <family>Arial</family>
               <pointsize>14</pointsize>
              </font>
             </property>
-            <property name="title">
-             <string>คำนวนต้นทุนสิ้นค้า</string>
+            <property name="text">
+             <string>เลขที่ใบกำกับภาษี</string>
             </property>
-            <layout class="QVBoxLayout" name="groupBoxLayout">
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="lineEdit_invoice_number"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_search_invoice">
+            <property name="text">
+             <string>ค้นหา</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="groupBox_invoices">
+            <property name="font">
+             <font>
+              <family>Arial</family>
+              <pointsize>18</pointsize>
+             </font>
+            </property>
+            <property name="title">
+             <string>รายการใบกำกับภาษี</string>
+            </property>
+            <layout class="QVBoxLayout" name="groupBoxInvoicesLayout">
              <item>
-              <widget class="QLabel" name="label">
-               <property name="text">
-                <string>สิ้นค้า</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QSpinBox" name="spinBox"/>
-             </item>
-             <item>
-              <widget class="QLabel" name="label_2">
-               <property name="text">
-                <string>ราคาขาย</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLineEdit" name="lineEdit"/>
-             </item>
-             <item>
-              <widget class="QPushButton" name="pushButton_4">
-               <property name="text">
-                <string>คำนวณ</string>
-               </property>
-              </widget>
+              <widget class="QTableView" name="tableView_invoices"/>
              </item>
             </layout>
            </widget>
           </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_generate_invoice_report">
+            <property name="text">
+             <string>สร้างรายงานใบกำกับภาษี</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
+        <!-- End of tab3 -->
+
+        <!-- Tab 4: คำนวณต้นทุน -->
+       <widget class="QWidget" name="tab4">
+        <attribute name="title">
+        <string>คำนวณต้นทุน</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="tab4Layout">
+        <item>
+        <widget class="QGroupBox" name="groupBox">
+            <property name="font">
+            <font>
+            <family>Arial</family>
+            <pointsize>14</pointsize>
+            </font>
+            </property>
+            <property name="title">
+            <string>คำนวณต้นทุนสินค้า</string>
+            </property>
+            <layout class="QFormLayout" name="groupBoxLayout">
+            <property name="labelAlignment">
+            <set>Qt::AlignRight|Qt::AlignVCenter</set>
+            </property>
+
+            <item row="0" column="0">
+            <widget class="QLabel" name="label_product">
+            <property name="text">
+                <string>สินค้า:</string>
+            </property>
+            </widget>
+            </item>
+            <item row="0" column="1">
+            <widget class="QComboBox" name="comboBox_products"/>
+            </item>
+
+            <item row="1" column="0">
+            <widget class="QLabel" name="label_quantity">
+            <property name="text">
+                <string>จำนวน:</string>
+            </property>
+            </widget>
+            </item>
+            <item row="1" column="1">
+            <widget class="QSpinBox" name="spinBox_quantity">
+            <property name="minimum">
+                <number>1</number>
+            </property>
+            <property name="maximum">
+                <number>10000</number>
+            </property>
+            <property name="value">
+                <number>1</number>
+            </property>
+            </widget>
+            </item>
+
+            <item row="2" column="0">
+            <widget class="QLabel" name="label_sale_price">
+            <property name="text">
+                <string>ราคาขายต่อหน่วย (บาท):</string>
+            </property>
+            </widget>
+            </item>
+            <item row="2" column="1">
+            <widget class="QLineEdit" name="lineEdit_sale_price"/>
+            </item>
+
+            <item row="3" column="0" colspan="2">
+            <widget class="QPushButton" name="pushButton_calculate_cost">
+            <property name="text">
+                <string>📊 คำนวณต้นทุน</string>
+            </property>
+            </widget>
+            </item>
+
+            <item row="4" column="0" colspan="2">
+            <widget class="QLabel" name="label_result">
+            <property name="text">
+                <string>ผลลัพธ์: </string>
+            </property>
+            <property name="font">
+                <font>
+                <pointsize>14</pointsize>
+                <bold>true</bold>
+                </font>
+            </property>
+            </widget>
+            </item>
+            </layout>
+        </widget>
+        </item>
+        </layout>
+        </widget>
+        <!-- End of tab4 -->
+        
        </widget>
       </item>
      </layout>

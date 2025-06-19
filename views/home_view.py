@@ -10,8 +10,8 @@ from PyQt6.QtCore import QTimer, QModelIndex
 from PyQt6.uic import loadUi
 
 from delegates.button_delegate import ModernButtonDelegate  
-from models.product_model import ProductModel
-from models.product_table_model import ProductTableModel
+from models.product_model import ProductModel 
+from models.product_table_model import ProductTableModel  
 from views.add_product_dialog import AddProductDialog
 from views.edit_product_dialog import EditProductDialog
 from views.order_product_dialog import OrderProductDialog 
@@ -20,7 +20,8 @@ from models.order_table_model import OrderTableModel  # ⬅️ new model
 from views.pdf_viewer import PDFViewer  # ⬅️ new PDF viewer
 from utils.path_utils import resource_path
 from utils.generate_delivery_pdf import generate_delivery_pdf
-from utils.generate_quotation_pdf import generate_quotation_pdf  # ⬅️ new PDF generation utility
+from utils.generate_quotation_pdf import generate_quotation_pdf
+from views.update_order_start_dialog import UpdateOrderStatusDialog  # ⬅️ new PDF generation utility
 
 class HomeView(QMainWindow):
     def __init__(self):
@@ -38,8 +39,8 @@ class HomeView(QMainWindow):
         self.datetimeLabel: QLabel = self.findChild(QLabel, "datetimeLabel")
         self.spinBox: QSpinBox = self.findChild(QSpinBox, "spinBox")
         self.lineEdit: QLineEdit = self.findChild(QLineEdit, "lineEdit")
-        self.calculateButton: QPushButton = self.findChild(QPushButton, "pushButton_4")
-        self.calculateButton.clicked.connect(self.calculate_cost)
+        self.pushButton_calculate_cost = self.findChild(QPushButton, "pushButton_calculate_cost")
+        self.pushButton_calculate_cost.clicked.connect(self.calculate_cost)
 
         self.reportButton: QPushButton = self.findChild(QPushButton, "pushButton")
         self.reportButton.clicked.connect(self.show_report)
@@ -82,19 +83,23 @@ class HomeView(QMainWindow):
         # ใช้ ModernButtonDelegate สำหรับใบส่งของ ใบส่งของ - ปุ่มสีฟ้า
         delivery_delegate = ModernButtonDelegate(self.orderTableView, label="📄 ใบส่งของ", color="#2196F3")
         delivery_delegate.button_signal.clicked.connect(self.on_delivery_note_clicked)
-        self.orderTableView.setItemDelegateForColumn(5, delivery_delegate)
+        self.orderTableView.setItemDelegateForColumn(6, delivery_delegate)
 
         # ใช้ ModernButtonDelegate สำหรับใบเสนอราคา ใบเสนอราคา - ปุ่มสีส้ม
         quotation_delegate = ModernButtonDelegate(self.orderTableView, label="📑 ใบเสนอราคา", color="#FF9800")
         quotation_delegate.button_signal.clicked.connect(self.on_quotation_clicked)
-        self.orderTableView.setItemDelegateForColumn(6, quotation_delegate)
+        self.orderTableView.setItemDelegateForColumn(7, quotation_delegate)
+
+        self.orderTableView.clicked.connect(self.on_order_table_clicked)
 
         # ขนาดของแถว
         self.orderTableView.verticalHeader().setDefaultSectionSize(40)
         self.orderTableView.resizeColumnsToContents()  # ปรับขนาดคอลัมน์อื่นก่อน
         self.orderTableView.setColumnWidth(5, 140)     # ตั้งขนาดคอลัมน์ปุ่มใหม่
-        self.orderTableView.setColumnWidth(6, 140)
+        self.orderTableView.setColumnWidth(6, 140)     # ตั้งขนาดคอลัมน์ปุ่มใหม่
+        self.orderTableView.setColumnWidth(7, 140)
 
+        
         # === Clock update ===
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_datetime)
@@ -198,13 +203,17 @@ class HomeView(QMainWindow):
         dialog = OrderProductDialog(product_list, order_id, self)
         if dialog.exec():
             # Optionally handle the confirmed order here
-            pass
+            # รีเฟรชตารางออเดอร์เมื่อกด confirm แล้วปิด dialog
+            self.load_order_data()
 
     def load_order_data(self):
         orders = self.orderController.get_all_orders()
         table_model = OrderTableModel(orders)
         self.orderTableView.setModel(table_model)
-        self.orderTableView.resizeColumnsToContents()
+        self.orderTableView.resizeColumnsToContents()  # ปรับขนาดคอลัมน์อื่นก่อน
+        self.orderTableView.setColumnWidth(5, 140)     # ตั้งขนาดคอลัมน์ปุ่มใหม่
+        self.orderTableView.setColumnWidth(6, 140)     # ตั้งขนาดคอลัมน์ปุ่มใหม่
+        self.orderTableView.setColumnWidth(7, 140)
 
     def on_delivery_note_clicked(self, row: int):
         logging.info(f"🧾 เริ่มสร้างใบส่งของจากแถวที่: {row}")
@@ -266,3 +275,27 @@ class HomeView(QMainWindow):
         except Exception as e:
             logging.error(f"❌ เกิดข้อผิดพลาดขณะสร้างใบเสนอราคา: {e}", exc_info=True)
             QMessageBox.critical(self, "ผิดพลาด", f"ไม่สามารถสร้างใบเสนอราคาได้: {e}")
+
+    def on_order_table_clicked(self, index):
+        if not index.isValid():
+            return
+
+        col = index.column()
+        row = index.row()
+
+        # สมมติคอลัมน์สถานะคำสั่งซื้อคือ 5
+        if col == 5:
+            model = self.orderTableView.model()
+            order = model.orders[row]
+            current_status = order.get("order_payment_status", "รอดำเนินการ")
+
+            dialog = UpdateOrderStatusDialog(current_status, self)
+            if dialog.exec():
+                new_status = dialog.get_selected_status()
+                order_no = order["order_no"]
+
+                # อัพเดตสถานะในฐานข้อมูลผ่าน controller
+                self.orderController.update_payment_status(order_no, new_status)
+
+                # รีเฟรชข้อมูลใหม่
+                self.load_order_data()

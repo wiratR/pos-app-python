@@ -44,6 +44,7 @@ def initialize_database():
             delivery_date TEXT NOT NULL,
             customer_id INTEGER NOT NULL,
             total_amount REAL NOT NULL,
+            order_payment_status TEXT CHECK(order_payment_status IN ('paid', 'unpaid', 'pending','cancelled')) DEFAULT 'unpaid',
             FOREIGN KEY(customer_id) REFERENCES customers(id)
         )
     """)
