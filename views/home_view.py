@@ -9,20 +9,23 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import QTimer, QModelIndex
 from PyQt6.uic import loadUi
 
-from controllers.stock_controller import StockController
-from delegates.button_delegate import ModernButtonDelegate  
-from models.product_model import ProductModel 
-from models.product_table_model import ProductTableModel  
-from views.add_product_dialog import AddProductDialog
-from views.edit_product_dialog import EditProductDialog
-from views.order_product_dialog import OrderProductDialog 
-from controllers.order_controller import OrderController
-from models.order_table_model import OrderTableModel  # ⬅️ new model
-from views.pdf_viewer import PDFViewer  # ⬅️ new PDF viewer
+# Importing necessary modules and classes
+from utils.generate_invoice_pdf import generate_invoice_pdf
 from utils.path_utils import resource_path
 from utils.generate_delivery_pdf import generate_delivery_pdf
 from utils.generate_quotation_pdf import generate_quotation_pdf
+from delegates.button_delegate import ModernButtonDelegate  
+from models.product_model import ProductModel 
+from views.add_product_dialog import AddProductDialog
+from views.edit_product_dialog import EditProductDialog
+from views.order_product_dialog import OrderProductDialog 
 from views.update_order_start_dialog import UpdateOrderStatusDialog  # ⬅️ new PDF generation utility
+from views.pdf_viewer import PDFViewer  # ⬅️ new PDF viewer
+from controllers.order_controller import OrderController
+from controllers.stock_controller import StockController
+from models.product_table_model import ProductTableModel 
+from models.order_table_model import OrderTableModel  # ⬅️ new model
+from models.invoice_tab_model import InvoiceTableModel  # ⬅️ new invoice model
 
 class HomeView(QMainWindow):
     def __init__(self):
@@ -100,7 +103,18 @@ class HomeView(QMainWindow):
         self.orderTableView.setColumnWidth(6, 140)     # ตั้งขนาดคอลัมน์ปุ่มใหม่
         self.orderTableView.setColumnWidth(7, 140)
 
-        
+        order_model =  self.orderController
+        # สร้างโมเดลตารางใบแจ้งหนี้
+        self.invoice_model = InvoiceTableModel(order_model)
+        self.tableView_invoices.setModel(self.invoice_model)
+        self.tableView_invoices.resizeColumnsToContents()  # ปรับขนาดคอลัมน์อื่นก่อน
+        self.tableView_invoices.setColumnWidth(5, 140)     # ตั้งขนาดคอลัมน์ปุ่มใหม่
+
+        # Delegate
+        invoice_delegate = ModernButtonDelegate(self.tableView_invoices, label="📑 ใบเสร็จรับเงิน", color="#4CAF50")
+        invoice_delegate.button_signal.clicked.connect(self.on_invoice_button_clicked)
+        self.tableView_invoices.setItemDelegateForColumn(5, invoice_delegate)
+
         # === Clock update ===
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_datetime)
@@ -147,7 +161,6 @@ class HomeView(QMainWindow):
         price = model.data(model.index(row, 2))
 
         # ดึง stock_quantity จาก StockModel
-        from controllers.stock_controller import StockController
         stock_controller = StockController()
         stock_info = stock_controller.get_stock_by_product(product_id)
         stock_quantity = stock_info["stock_quantity"] if stock_info else 0
@@ -186,21 +199,6 @@ class HomeView(QMainWindow):
             # Refresh ตาราง
             model._products = model.product_model.get_all_products()
             model.layoutChanged.emit()
-
-
-    # def add_product(self):
-    #     dialog = AddProductDialog(self)
-    #     if dialog.exec():
-    #         name, description, price = dialog.get_data()
-
-    #         # Add to DB and refresh table
-    #         model = self.tableView.model()
-    #         model.product_model.add_product(name, description, price)
-    #         model._products = model.product_model.get_all_products()
-    #         model.layoutChanged.emit()
-
-    #         QMessageBox.information(self, "เพิ่มสินค้า", "เพิ่มสินค้าเรียบร้อยแล้ว")
-
 
     def add_product(self):
         dialog = AddProductDialog(self)
@@ -264,25 +262,72 @@ class HomeView(QMainWindow):
         self.orderTableView.setColumnWidth(6, 140)     # ตั้งขนาดคอลัมน์ปุ่มใหม่
         self.orderTableView.setColumnWidth(7, 140)
 
+    # def on_delivery_note_clicked(self, row: int):
+    #     logging.info(f"🧾 เริ่มสร้างใบส่งของจากแถวที่: {row}")
+
+    #     model = self.orderTableView.model()
+    #     order = model.orders[row]
+
+    #     items = [
+    #         {"product": "สินค้า A", "qty": 2, "price": 50.0},
+    #         {"product": "สินค้า B", "qty": 1, "price": 100.0}
+    #     ]
+
+    #     try:
+    #         os.makedirs("output", exist_ok=True)
+    #         order_no = order.get("order_no", f"no-id-{datetime.now().timestamp()}")
+    #         # use resource_path
+    #         output_dir = os.path.abspath("output")
+    #         os.makedirs(output_dir, exist_ok=True)
+    #         output_path = os.path.join(output_dir, f"ใบส่งของ_{order_no}.pdf")
+    #         # output_path = os.path.join("output", f"ใบส่งของ_{order_no}.pdf")
+    #         logging.info(f"📄 สร้างไฟล์ PDF ที่: {output_path}")
+
+    #         generate_delivery_pdf(order, items, output_path)
+
+    #         logging.info("✅ สร้างใบส่งของ PDF เสร็จสมบูรณ์")
+
+    #         self.pdf_viewer = PDFViewer(output_path)
+    #         self.pdf_viewer.show()
+
+    #     except Exception as e:
+    #         logging.error(f"❌ เกิดข้อผิดพลาดขณะสร้างใบส่งของ: {e}", exc_info=True)
+    #         QMessageBox.critical(self, "ผิดพลาด", f"ไม่สามารถสร้างใบส่งของได้: {e}")
+
     def on_delivery_note_clicked(self, row: int):
         logging.info(f"🧾 เริ่มสร้างใบส่งของจากแถวที่: {row}")
-
         model = self.orderTableView.model()
         order = model.orders[row]
-
-        items = [
-            {"product": "สินค้า A", "qty": 2, "price": 50.0},
-            {"product": "สินค้า B", "qty": 1, "price": 100.0}
-        ]
-
+        order_no = order.get("order_no", f"no-id-{datetime.now().timestamp()}")
+        logging.info(f"เลขที่คำสั่งซื้อ: {order_no}")
         try:
+            # ดึงรายการสินค้าแบบ dynamic จาก DB
+            raw_items = self.orderController.get_order_items(order_no)
+            logging.info(f"ดึงรายการสินค้า {len(raw_items)} รายการ จาก order_no: {order_no}")
+
+            # ลอง debug ดูรูปแบบข้อมูล
+            for item in raw_items:
+                logging.debug(f"Raw item: {item} (type: {type(item)})")
+
+            items = []
+            for row in raw_items:
+                try:
+                    # ใช้ชื่อสินค้าใน dict เลย
+                    product_name = row['name']
+                    qty = int(row['quantity'])
+                    unit_price = float(row['unit_price'])
+
+                    items.append({
+                        "product": product_name,
+                        "qty": qty,
+                        "price": unit_price
+                    })
+                except (ValueError, KeyError, TypeError) as e:
+                    logging.warning(f"ข้ามแถวข้อมูลไม่ถูกต้อง: {row} เนื่องจาก: {e}")
+
             os.makedirs("output", exist_ok=True)
-            order_no = order.get("order_no", f"no-id-{datetime.now().timestamp()}")
-            # use resource_path
             output_dir = os.path.abspath("output")
-            os.makedirs(output_dir, exist_ok=True)
             output_path = os.path.join(output_dir, f"ใบส่งของ_{order_no}.pdf")
-            # output_path = os.path.join("output", f"ใบส่งของ_{order_no}.pdf")
             logging.info(f"📄 สร้างไฟล์ PDF ที่: {output_path}")
 
             generate_delivery_pdf(order, items, output_path)
@@ -299,12 +344,11 @@ class HomeView(QMainWindow):
     def on_quotation_clicked(self, row):
         logging.info(f"📑 สร้างใบเสนอราคา สำหรับแถว {row}")
         model = self.orderTableView.model()
-        order = model.orders[row]
-
-        items = [
-            {"name": "สินค้า A", "quantity": 2, "unit_price": 50.0},
-            {"name": "สินค้า B", "quantity": 1, "unit_price": 100.0}
-        ]
+        # ดึง order_no จาก model ของตาราง
+        order_no = model.orders[row]['order_no']
+        # ดึงรายละเอียดคำสั่งซื้อพร้อมรายการสินค้า
+        order = self.orderController.get_order_by_no(order_no)
+        items = order.get('items', [])  # ดึงรายการสินค้า
 
         try:
             os.makedirs("output", exist_ok=True)
@@ -324,6 +368,32 @@ class HomeView(QMainWindow):
         except Exception as e:
             logging.error(f"❌ เกิดข้อผิดพลาดขณะสร้างใบเสนอราคา: {e}", exc_info=True)
             QMessageBox.critical(self, "ผิดพลาด", f"ไม่สามารถสร้างใบเสนอราคาได้: {e}")
+    
+    def on_invoice_button_clicked(self, row):
+        # ดึง order_no จาก model ของตาราง (แก้ตามโครงสร้างของคุณ)
+        order_no = self.invoice_model.orders[row][0]  # สมมติ order_no อยู่ index 0
+        
+        # ดึงรายละเอียดคำสั่งซื้อพร้อม items
+        order = self.orderController.get_order_by_no(order_no)
+        items = order.get('items', [])  # ดึงรายการสินค้า
+        
+        try:
+            os.makedirs("output", exist_ok=True)
+            output_dir = os.path.abspath("output")
+            os.makedirs(output_dir, exist_ok=True)
+            output_path = os.path.join(output_dir, f"ใบเสร็จ_{order_no}.pdf")
+            logging.info(f"📄 สร้างไฟล์ PDF ใบเสร็จที่: {output_path}")
+
+            generate_invoice_pdf(order, items, output_path)
+
+            logging.info("✅ สร้างใบเสร็จ PDF เสร็จสมบูรณ์")
+
+            self.pdf_viewer = PDFViewer(output_path)
+            self.pdf_viewer.show()
+
+        except Exception as e:
+            logging.error(f"❌ เกิดข้อผิดพลาดขณะสร้างใบเสร็จ: {e}", exc_info=True)
+            QMessageBox.critical(self, "ผิดพลาด", f"ไม่สามารถสร้างใบเสร็จได้: {e}")
 
     def on_order_table_clicked(self, index):
         if not index.isValid():
@@ -348,3 +418,4 @@ class HomeView(QMainWindow):
 
                 # รีเฟรชข้อมูลใหม่
                 self.load_order_data()
+

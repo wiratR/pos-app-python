@@ -57,3 +57,37 @@ class OrderController:
         """
         self.model.update_payment_status(order_no, new_status)
 
+    def get_paid_orders(self):
+        """
+        ดึงรายการคำสั่งซื้อที่ชำระเงินแล้ว
+        :return: List of tuples - รายการคำสั่งซื้อที่ชำระเงินแล้ว
+        """
+        return self.model.get_paid_orders()
+    
+    
+    def get_order_by_no(self, order_no):
+        """
+        ดึงรายละเอียดคำสั่งซื้อรวมถึงรายการสินค้า
+        :param order_no: str - เลขที่คำสั่งซื้อ
+        :return: dict - ข้อมูลคำสั่งซื้อพร้อมรายการสินค้า
+        """
+        order = self.model.get_order_by_no(order_no)
+        items = self.model.get_order_items(order_no)
+        order['items'] = items
+        return order
+    
+    def get_order_items(self, order_no):
+        """
+        ดึงรายการสินค้าของคำสั่งซื้อ
+        :param order_no: str - เลขที่คำสั่งซื้อ
+        :return: List of tuples - รายการสินค้าในคำสั่งซื้อนั้น
+        """
+        return self.model.get_order_items(order_no)
+    
+    def get_product_name_by_id(self, product_id):
+        """
+        ดึงชื่อสินค้าจาก product_id
+        :param product_id: int - รหัสสินค้า
+        :return: str - ชื่อสินค้า
+        """
+        return self.model.get_product_name_by_id(product_id)

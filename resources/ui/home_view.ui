@@ -186,13 +186,6 @@
             </layout>
            </widget>
           </item>
-          <item>
-           <widget class="QPushButton" name="pushButton_generate_invoice_report">
-            <property name="text">
-             <string>สร้างรายงานใบกำกับภาษี</string>
-            </property>
-           </widget>
-          </item>
          </layout>
         </widget>
         <!-- End of tab3 -->

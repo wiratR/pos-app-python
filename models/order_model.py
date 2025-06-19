@@ -96,3 +96,76 @@ class OrderModel:
 
         conn.commit()
         conn.close()
+
+    def get_paid_orders(self):
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT orders.order_no, orders.order_date, orders.delivery_date, 
+                customers.company_name, orders.total_amount
+            FROM orders
+            JOIN customers ON orders.customer_id = customers.id
+            WHERE order_payment_status = 'paid'
+            ORDER BY orders.order_date DESC
+        """)
+        rows = cursor.fetchall()
+        conn.close()
+        return rows
+    
+    def get_order_by_no(self, order_no):
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT 
+                o.order_no,
+                o.order_date,
+                o.delivery_date,
+                o.total_amount,
+                c.company_name,
+                c.company_address,
+                c.contact_name,
+                c.phone,
+                c.email,
+                c.tax_id
+            FROM orders o
+            JOIN customers c ON o.customer_id = c.id
+            WHERE o.order_no = ?
+        """, (order_no,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return {
+                "order_no": row[0],
+                "order_date": row[1],
+                "delivery_date": row[2],
+                "total_amount": row[3],
+                "company_name": row[4],
+                "company_address": row[5],
+                "contact_name": row[6],
+                "phone": row[7],
+                "email": row[8],
+                "tax_id": row[9],
+            }
+        return None
+
+    def get_order_items(self, order_no):
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT p.name, oi.quantity, oi.subtotal / oi.quantity AS unit_price
+            FROM order_items oi
+            JOIN orders o ON oi.order_id = o.id
+            JOIN products p ON oi.product_id = p.id
+            WHERE o.order_no = ?
+        """, (order_no,))
+        items = [{"name": r[0], "quantity": r[1], "unit_price": r[2]} for r in cursor.fetchall()]
+        conn.close()
+        return items
+    
+    def get_product_name_by_id(self, product_id):
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM products WHERE id = ?", (product_id,))
+        row = cursor.fetchone()
+        conn.close()
+        return row[0] if row else "ไม่ทราบชื่อสินค้า"
