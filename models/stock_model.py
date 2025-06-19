@@ -82,3 +82,18 @@ class StockModel:
         cursor.execute("DELETE FROM stock WHERE product_id = ?", (product_id,))
         conn.commit()
         conn.close()
+
+    def get_stock_by_product_name(self, name):
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT s.stock_quantity, s.cost_price 
+            FROM stock s
+            JOIN products p ON s.product_id = p.id
+            WHERE p.name = ?
+        """, (name,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return {"stock_quantity": row[0], "cost_price": row[1]}
+        return None

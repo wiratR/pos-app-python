@@ -23,4 +23,13 @@ class StockController:
         return self.model.delete_stock(product_id)
     
     def get_stock_by_product(self, product_id):
+        """
+        ดึงข้อมูลสต็อกโดยใช้ product_id
+        """
         return self.model.get_stock_by_product(product_id)
+    
+    def get_stock_by_product_name(self, product_name):
+        """
+        ดึงข้อมูลสต็อกโดยใช้ชื่อสินค้า
+        """
+        return self.model.get_stock_by_product_name(product_name)

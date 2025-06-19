@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import QDate
 from controllers.order_controller import OrderController
+from controllers.stock_controller import StockController
 
 
 class OrderProductDialog(QDialog):
@@ -13,6 +14,7 @@ class OrderProductDialog(QDialog):
         self.setWindowTitle("สั่งซื้อสินค้า")
         self.setFixedWidth(600)
         self.products = products
+        self.stock_controller = StockController()
 
         layout = QVBoxLayout()
 
@@ -56,11 +58,18 @@ class OrderProductDialog(QDialog):
 
         layout.addLayout(customer_form)
 
-        # Product Table
-        self.table = QTableWidget(len(products), 4)
-        self.table.setHorizontalHeaderLabels(["สินค้า", "ราคา/ ชิ้น", "จำนวน", "ราคารวม"])
+        # กรองสินค้าเฉพาะที่ stock_quantity > 0
+        self.products_in_stock = []
+        for name, price in self.products:
+            stock_info = self.stock_controller.get_stock_by_product_name(name)
+            if stock_info and stock_info['stock_quantity'] > 0:
+                self.products_in_stock.append((name, price, stock_info['stock_quantity']))
 
-        for row, (name, price) in enumerate(products):
+        # Product Table: เพิ่มคอลัมน์สต็อกคงเหลือ
+        self.table = QTableWidget(len(self.products_in_stock), 5)
+        self.table.setHorizontalHeaderLabels(["สินค้า", "ราคา/ ชิ้น", "จำนวน", "ราคารวม", "สต็อกคงเหลือ"])
+
+        for row, (name, price, stock_qty) in enumerate(self.products_in_stock):
             self.table.setItem(row, 0, QTableWidgetItem(name))
             self.table.setItem(row, 1, QTableWidgetItem(f"{price:.2f}"))
 
@@ -68,13 +77,14 @@ class OrderProductDialog(QDialog):
             qty_layout = QHBoxLayout()
             qty_layout.setContentsMargins(0, 0, 0, 0)
             qty_spin = QSpinBox()
-            qty_spin.setRange(0, 999)
+            qty_spin.setRange(0, stock_qty)  # max ตามสต็อกคงเหลือ
             qty_spin.valueChanged.connect(self.update_totals)
             qty_layout.addWidget(qty_spin)
             qty_widget.setLayout(qty_layout)
             self.table.setCellWidget(row, 2, qty_widget)
 
             self.table.setItem(row, 3, QTableWidgetItem("0.00"))
+            self.table.setItem(row, 4, QTableWidgetItem(str(stock_qty)))
 
         self.total_label = QLabel("รวมทั้งสิ้น: 0.00 บาท")
 
@@ -106,9 +116,10 @@ class OrderProductDialog(QDialog):
         self.total_label.setText(f"รวมทั้งสิ้น: {total:.2f} บาท")
 
     def get_product_id_by_name(self, name):
-        for i, (p_name, _) in enumerate(self.products):
+        # ใช้ products_in_stock เพื่อหา product_id จริง ๆ ควรเชื่อมกับ DB
+        for i, (p_name, _, _) in enumerate(self.products_in_stock):
             if p_name == name:
-                return i + 1  # assuming product_id is index+1
+                return i + 1  # สมมติ product_id = index+1
         return None
 
     def confirm_order(self):
@@ -157,6 +168,13 @@ class OrderProductDialog(QDialog):
         }
 
         controller.create_order(order_data, items)
+
+        # ตัด stock_quantity ตามจำนวนที่สั่ง
+        for product_id, qty, _ in items:
+            stock_info = self.stock_controller.get_stock_by_product(product_id)
+            if stock_info:
+                new_qty = stock_info['stock_quantity'] - qty
+                self.stock_controller.update_stock(product_id, quantity=new_qty)
 
         QMessageBox.information(
             self,
