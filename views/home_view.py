@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import QTimer, QModelIndex
 from PyQt6.uic import loadUi
 
+from controllers.stock_controller import StockController
 from delegates.button_delegate import ModernButtonDelegate  
 from models.product_model import ProductModel 
 from models.product_table_model import ProductTableModel  
@@ -139,18 +140,23 @@ class HomeView(QMainWindow):
         row = index.row()
         model = self.tableView.model()
 
-        # Retrieve current product data from the model
+        # ดึงข้อมูลสินค้า
         product_id = model.get_product_id(row)
         name = model.data(model.index(row, 0))
         description = model.data(model.index(row, 1))
         price = model.data(model.index(row, 2))
 
-        # Open the edit dialog
-        dialog = EditProductDialog(product_id, name, description, float(price), self)
-        
+        # ดึง stock_quantity จาก StockModel
+        from controllers.stock_controller import StockController
+        stock_controller = StockController()
+        stock_info = stock_controller.get_stock_by_product(product_id)
+        stock_quantity = stock_info["stock_quantity"] if stock_info else 0
+
+        # เปิด dialog พร้อม stock_quantity
+        dialog = EditProductDialog(product_id, name, description, float(price), stock_quantity, self)
+
         if dialog.exec():
             if dialog.delete_requested:
-                # User confirmed delete
                 confirm = QMessageBox.question(
                     self,
                     "ยืนยันการลบ",
@@ -159,29 +165,72 @@ class HomeView(QMainWindow):
                 )
                 if confirm == QMessageBox.StandardButton.Yes:
                     model.delete_product(product_id)
+                    stock_controller.delete_stock(product_id)
             else:
-                # User saved changes
+                updated = dialog.get_updated_data()
+
+                # อัปเดตข้อมูลใน ProductModel
                 model.update_product(
                     product_id,
-                    dialog.name,
-                    dialog.description,
-                    dialog.price
+                    updated["name"],
+                    updated["description"],
+                    updated["price"]
                 )
-            # Refresh the view
+
+                # อัปเดตข้อมูลสต็อกใน StockModel
+                stock_controller.update_stock(
+                    product_id,
+                    quantity=updated["stock_quantity"]
+                )
+
+            # Refresh ตาราง
+            model._products = model.product_model.get_all_products()
             model.layoutChanged.emit()
+
+
+    # def add_product(self):
+    #     dialog = AddProductDialog(self)
+    #     if dialog.exec():
+    #         name, description, price = dialog.get_data()
+
+    #         # Add to DB and refresh table
+    #         model = self.tableView.model()
+    #         model.product_model.add_product(name, description, price)
+    #         model._products = model.product_model.get_all_products()
+    #         model.layoutChanged.emit()
+
+    #         QMessageBox.information(self, "เพิ่มสินค้า", "เพิ่มสินค้าเรียบร้อยแล้ว")
+
 
     def add_product(self):
         dialog = AddProductDialog(self)
         if dialog.exec():
-            name, description, price = dialog.get_data()
+            data = dialog.get_data()
 
-            # Add to DB and refresh table
+            name = data['name']
+            description = data['description']
+            price = data['price']
+            cost_price = data['cost_price']
+            stock_quantity = data['stock_quantity']
+
+            # Add product to database
             model = self.tableView.model()
             model.product_model.add_product(name, description, price)
+
+            # Get the new product_id (based on name)
+            product_id = model.product_model.get_product_id_by_name(name)
+            if product_id:
+                # Add or update stock entry
+                from controllers.stock_controller import StockController
+                stock_controller = StockController()
+                stock_controller.add_or_update_stock(product_id, stock_quantity, cost_price)
+
+            # Refresh product table
             model._products = model.product_model.get_all_products()
             model.layoutChanged.emit()
 
-            QMessageBox.information(self, "เพิ่มสินค้า", "เพิ่มสินค้าเรียบร้อยแล้ว")
+            QMessageBox.information(self, "เพิ่มสินค้า", "เพิ่มสินค้าและสต็อกเรียบร้อยแล้ว")
+
 
     def load_product_names(self):
         model = self.tableView.model()

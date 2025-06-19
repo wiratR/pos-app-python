@@ -1,4 +1,7 @@
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QDialogButtonBox, QMessageBox, QPushButton
+from PyQt6.QtWidgets import (
+    QDialog, QVBoxLayout, QFormLayout, QLineEdit, QDialogButtonBox, QMessageBox, QPushButton
+)
+from PyQt6.QtGui import QIntValidator, QDoubleValidator
 
 class AddProductDialog(QDialog):
     def __init__(self, parent=None):
@@ -7,12 +10,22 @@ class AddProductDialog(QDialog):
 
         self.name_input = QLineEdit()
         self.desc_input = QLineEdit()
+
         self.price_input = QLineEdit()
+        self.price_input.setValidator(QDoubleValidator(0.00, 9999999.99, 2))
+
+        self.cost_price_input = QLineEdit()
+        self.cost_price_input.setValidator(QDoubleValidator(0.00, 9999999.99, 2))
+
+        self.stock_qty_input = QLineEdit()
+        self.stock_qty_input.setValidator(QIntValidator(0, 999999))
 
         form_layout = QFormLayout()
         form_layout.addRow("ชื่อสินค้า:", self.name_input)
         form_layout.addRow("รายละเอียดสินค้า:", self.desc_input)
-        form_layout.addRow("ราคาสินค้า:", self.price_input)
+        form_layout.addRow("ราคาขายสินค้า:", self.price_input)
+        form_layout.addRow("ราคาต้นทุน:", self.cost_price_input)
+        form_layout.addRow("จำนวนสต็อก:", self.stock_qty_input)
 
         # Create custom buttons
         self.save_button = QPushButton("บันทึก")
@@ -39,19 +52,38 @@ class AddProductDialog(QDialog):
             QMessageBox.warning(self, "ข้อผิดพลาด", "กรุณากรอกชื่อสินค้า")
             return
         if not self.price_input.text().strip():
-            QMessageBox.warning(self, "ข้อผิดพลาด", "กรุณากรอกราคาสินค้า")
+            QMessageBox.warning(self, "ข้อผิดพลาด", "กรุณากรอกราคาขายสินค้า")
             return
+        if not self.cost_price_input.text().strip():
+            QMessageBox.warning(self, "ข้อผิดพลาด", "กรุณากรอกราคาต้นทุน")
+            return
+        if not self.stock_qty_input.text().strip():
+            QMessageBox.warning(self, "ข้อผิดพลาด", "กรุณากรอกจำนวนสต็อก")
+            return
+
         try:
-            float(self.price_input.text())
+            price = float(self.price_input.text())
+            cost_price = float(self.cost_price_input.text())
+            stock_qty = int(self.stock_qty_input.text())
         except ValueError:
-            QMessageBox.warning(self, "ข้อผิดพลาด", "ราคาสินค้าต้องเป็นตัวเลข")
+            QMessageBox.warning(self, "ข้อผิดพลาด", "ราคาสินค้าและจำนวนสต็อกต้องเป็นตัวเลขที่ถูกต้อง")
             return
+
+        if cost_price > price:
+            QMessageBox.warning(self, "ข้อผิดพลาด", "ราคาต้นทุนไม่ควรมากกว่าราคาขาย")
+            return
+
+        if stock_qty < 0:
+            QMessageBox.warning(self, "ข้อผิดพลาด", "จำนวนสต็อกต้องไม่ติดลบ")
+            return
+
         super().accept()
 
     def get_data(self):
-        return (
-            self.name_input.text().strip(),
-            self.desc_input.text().strip(),
-            float(self.price_input.text().strip())
-        )
-    
+        return {
+            'name': self.name_input.text().strip(),
+            'description': self.desc_input.text().strip(),
+            'price': float(self.price_input.text().strip()),
+            'cost_price': float(self.cost_price_input.text().strip()),
+            'stock_quantity': int(self.stock_qty_input.text().strip())
+        }

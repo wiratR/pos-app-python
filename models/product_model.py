@@ -111,3 +111,12 @@ class ProductModel:
             cursor.execute("DELETE FROM products")
             conn.commit()
             logging.info("All products cleared from the database.")
+    
+    def get_product_id_by_name(self, name: str) -> Optional[int]:
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM products WHERE name = ?", (name,))
+            row = cursor.fetchone()
+            if row:
+                return row[0]
+            return None
