@@ -12,7 +12,6 @@ from PyQt6.uic import loadUi
 from delegates.button_delegate import ModernButtonDelegate  
 from models.product_model import ProductModel
 from models.product_table_model import ProductTableModel
-from utils.generate_delivery_pdf import generate_delivery_pdf
 from views.add_product_dialog import AddProductDialog
 from views.edit_product_dialog import EditProductDialog
 from views.order_product_dialog import OrderProductDialog 
@@ -20,6 +19,8 @@ from controllers.order_controller import OrderController
 from models.order_table_model import OrderTableModel  # ⬅️ new model
 from views.pdf_viewer import PDFViewer  # ⬅️ new PDF viewer
 from utils.path_utils import resource_path
+from utils.generate_delivery_pdf import generate_delivery_pdf
+from utils.generate_quotation_pdf import generate_quotation_pdf  # ⬅️ new PDF generation utility
 
 class HomeView(QMainWindow):
     def __init__(self):
@@ -78,19 +79,21 @@ class HomeView(QMainWindow):
         self.orderTableView: QTableView = self.findChild(QTableView, "tableView")  # This is from tab2
         self.load_order_data()
 
+        # ใช้ ModernButtonDelegate สำหรับใบส่งของ ใบส่งของ - ปุ่มสีฟ้า
+        delivery_delegate = ModernButtonDelegate(self.orderTableView, label="📄 ใบส่งของ", color="#2196F3")
+        delivery_delegate.button_signal.clicked.connect(self.on_delivery_note_clicked)
+        self.orderTableView.setItemDelegateForColumn(5, delivery_delegate)
 
-        # ใช้ ModernButtonDelegate
-        delegate = ModernButtonDelegate(self.orderTableView)
-        delegate.button_signal.clicked.connect(self.on_order_button_row_clicked)  # 👈 connect signal
-        self.orderTableView.setItemDelegateForColumn(5, delegate)
-
-        # delegate = ModernButtonDelegate(self.orderTableView)
-        # delegate.button_signal.clicked.connect(self.on_order_button_row_clicked)
-        # self.orderTableView.setItemDelegateForColumn(5, delegate)
+        # ใช้ ModernButtonDelegate สำหรับใบเสนอราคา ใบเสนอราคา - ปุ่มสีส้ม
+        quotation_delegate = ModernButtonDelegate(self.orderTableView, label="📑 ใบเสนอราคา", color="#FF9800")
+        quotation_delegate.button_signal.clicked.connect(self.on_quotation_clicked)
+        self.orderTableView.setItemDelegateForColumn(6, quotation_delegate)
 
         # ขนาดของแถว
         self.orderTableView.verticalHeader().setDefaultSectionSize(40)
-        self.orderTableView.resizeColumnsToContents()
+        self.orderTableView.resizeColumnsToContents()  # ปรับขนาดคอลัมน์อื่นก่อน
+        self.orderTableView.setColumnWidth(5, 140)     # ตั้งขนาดคอลัมน์ปุ่มใหม่
+        self.orderTableView.setColumnWidth(6, 140)
 
         # === Clock update ===
         self.timer = QTimer(self)
@@ -203,7 +206,7 @@ class HomeView(QMainWindow):
         self.orderTableView.setModel(table_model)
         self.orderTableView.resizeColumnsToContents()
 
-    def on_order_button_row_clicked(self, row: int):
+    def on_delivery_note_clicked(self, row: int):
         logging.info(f"🧾 เริ่มสร้างใบส่งของจากแถวที่: {row}")
 
         model = self.orderTableView.model()
@@ -234,3 +237,32 @@ class HomeView(QMainWindow):
         except Exception as e:
             logging.error(f"❌ เกิดข้อผิดพลาดขณะสร้างใบส่งของ: {e}", exc_info=True)
             QMessageBox.critical(self, "ผิดพลาด", f"ไม่สามารถสร้างใบส่งของได้: {e}")
+
+    def on_quotation_clicked(self, row):
+        logging.info(f"📑 สร้างใบเสนอราคา สำหรับแถว {row}")
+        model = self.orderTableView.model()
+        order = model.orders[row]
+
+        items = [
+            {"name": "สินค้า A", "quantity": 2, "unit_price": 50.0},
+            {"name": "สินค้า B", "quantity": 1, "unit_price": 100.0}
+        ]
+
+        try:
+            os.makedirs("output", exist_ok=True)
+            order_no = order.get("order_no", f"no-id-{datetime.now().timestamp()}")
+            output_dir = os.path.abspath("output")
+            os.makedirs(output_dir, exist_ok=True)
+            output_path = os.path.join(output_dir, f"ใบเสนอราคา_{order_no}.pdf")
+            logging.info(f"📄 สร้างไฟล์ PDF ที่: {output_path}")
+
+            generate_quotation_pdf(order, items, output_path)
+
+            logging.info("✅ สร้างใบเสนอราคา PDF เสร็จสมบูรณ์")
+
+            self.pdf_viewer = PDFViewer(output_path)
+            self.pdf_viewer.show()
+        
+        except Exception as e:
+            logging.error(f"❌ เกิดข้อผิดพลาดขณะสร้างใบเสนอราคา: {e}", exc_info=True)
+            QMessageBox.critical(self, "ผิดพลาด", f"ไม่สามารถสร้างใบเสนอราคาได้: {e}")

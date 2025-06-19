@@ -10,5 +10,5 @@ python app.py
 
 generate app .exe
 ```bash
-pyinstaller --onefile --windowed --add-data "views/home_view.ui:views" app.py
+pyinstaller --onefile --windowed --add-data "resources/ui/home_view.ui:resources/ui" app.py
 ```

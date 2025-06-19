@@ -43,6 +43,7 @@
            <widget class="QGroupBox" name="groupBox_3">
             <property name="font">
              <font>
+              <family>Arial</family>
               <pointsize>18</pointsize>
               <weight>50</weight>
               <bold>false</bold>
@@ -116,6 +117,7 @@
            <widget class="QGroupBox" name="groupBox_2">
             <property name="font">
              <font>
+              <family>Arial</family>
               <pointsize>18</pointsize>
              </font>
             </property>
