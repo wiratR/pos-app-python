@@ -25,7 +25,7 @@ class HomeView(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        ui_file = resource_path(os.path.join("views", "home_view.ui"))
+        ui_file = resource_path(os.path.join("resources", "ui", "home_view.ui"))
         loadUi(ui_file, self)
         logging.info("🔧 Loading HomeView UI from %s", ui_file)
 

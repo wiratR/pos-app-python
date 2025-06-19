@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout, QTableWidget, QTableWidgetItem, QWidget, QSpinBox,
     QFormLayout, QDateEdit
 )
-from PyQt6.QtCore import Qt, QDate
+from PyQt6.QtCore import QDate
 from controllers.order_controller import OrderController
 
 

@@ -3,15 +3,17 @@ import sys
 import sqlite3
 import logging
 from datetime import datetime
+from utils.path_utils import resource_path
+from dotenv import load_dotenv
 
-def resource_path(relative_path):
-    base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
-    return os.path.join(base_path, relative_path)
+# Load environment variables from .env file
+load_dotenv()
 
 class OrderModel:
     def __init__(self, db_path: str = None):
         if db_path is None:
-            db_path = resource_path(os.path.join("database", "app.sqlite"))
+            env_db_path = os.getenv("DATABASE_PATH", "database/app.sqlite")
+            db_path = resource_path(env_db_path)
         self.db_path = db_path
 
     def connect(self):
