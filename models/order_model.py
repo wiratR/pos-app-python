@@ -177,3 +177,27 @@ class OrderModel:
         row = cursor.fetchone()
         conn.close()
         return row[0] if row else "ไม่ทราบชื่อสินค้า"
+    
+    def get_orders_by_payment_date(self, start_date: str, end_date: str):
+        try:
+            conn = self.connect()
+            cursor = conn.cursor()
+            query = """
+                SELECT order_no, total_amount, payment_complete_date
+                FROM orders
+                WHERE payment_complete_date BETWEEN ? AND ?
+                AND order_payment_status = 'paid'
+            """
+            cursor.execute(query, (start_date, end_date))
+            rows = cursor.fetchall()
+            result = []
+            for row in rows:
+                result.append({
+                    "order_no": row[0],
+                    "total_amount": row[1],
+                    "payment_complete_date": row[2],
+                })
+            return result
+        except Exception as e:
+            logging.error(f"❌ Error fetching orders by payment date: {e}")
+            return []

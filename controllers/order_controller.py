@@ -91,3 +91,12 @@ class OrderController:
         :return: str - ชื่อสินค้า
         """
         return self.model.get_product_name_by_id(product_id)
+    
+    def get_orders_by_payment_date(self, start_date, end_date):
+        """
+        ดึงรายการคำสั่งซื้อที่ชำระเงินในช่วงวันที่กำหนด
+        :param start_date: str - วันที่เริ่มต้น (YYYY-MM-DD)
+        :param end_date: str - วันที่สิ้นสุด (YYYY-MM-DD)
+        :return: List of dicts - รายการคำสั่งซื้อที่ชำระเงินในช่วงวันที่กำหนด
+        """
+        return self.model.get_orders_by_payment_date(start_date, end_date)

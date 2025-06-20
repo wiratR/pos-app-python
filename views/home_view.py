@@ -10,10 +10,11 @@ from PyQt6.QtCore import QTimer, QModelIndex
 from PyQt6.uic import loadUi
 
 # Importing necessary modules and classes
-from utils.generate_invoice_pdf import generate_invoice_pdf
 from utils.path_utils import resource_path
 from utils.generate_delivery_pdf import generate_delivery_pdf
 from utils.generate_quotation_pdf import generate_quotation_pdf
+from utils.generate_invoice_pdf import generate_invoice_pdf
+from utils.generate_summary_report_pdf import generate_summary_report_pdf
 from delegates.button_delegate import ModernButtonDelegate  
 from views.add_product_dialog import AddProductDialog
 from views.edit_product_dialog import EditProductDialog
@@ -122,6 +123,14 @@ class HomeView(QMainWindow):
         self.tabWidget = self.findChild(QTabWidget, "tabWidget")  # ใช้ชื่อ object ใน .ui
         self.tabWidget.currentChanged.connect(self.on_tab_changed)
 
+        # ออกรายงานสรุปรายได้
+        self.calendar_start = self.findChild(QCalendarWidget, "calendarWidget")
+        self.calendar_end = self.findChild(QCalendarWidget, "calendarWidget_2")
+        self.reportButton = self.findChild(QPushButton, "pushButton")
+
+        # เชื่อมปุ่มกดกับเมธอด generate_summary_report
+        self.reportButton.clicked.connect(self.generate_summary_report)
+
         # === Clock update ===
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_datetime)
@@ -135,7 +144,7 @@ class HomeView(QMainWindow):
     def update_datetime(self):
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.datetimeLabel.setText(now)
-        logging.debug(f"⏰ Updated datetime: {now}")
+        # logging.debug(f"⏰ Updated datetime: {now}")
 
     def calculate_cost(self):
         try:
@@ -406,3 +415,32 @@ class HomeView(QMainWindow):
             self.tableView_invoices.resizeColumnsToContents()
             self.tableView_invoices.setColumnWidth(6, 140)     # ตั้งขนาดคอลัมน์ปุ่มใหม่
 
+    def generate_summary_report(self):
+        start_date = self.calendar_start.selectedDate().toString("yyyy-MM-dd")
+        end_date = self.calendar_end.selectedDate().toString("yyyy-MM-dd")
+
+        start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+        end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+
+        if end_dt <= start_dt:
+            QMessageBox.warning(self, "ข้อมูลไม่ถูกต้อง", "วันสิ้นสุดต้องมากกว่าวันเริ่มต้น กรุณาเลือกช่วงวันที่ใหม่")
+            return
+
+        try:
+            orders = self.orderController.get_orders_by_payment_date(start_date, end_date)
+            if not orders:
+                QMessageBox.information(self, "ไม่มีข้อมูล", "ไม่พบคำสั่งซื้อที่ชำระเงินในช่วงวันที่ที่เลือก")
+                return
+
+            os.makedirs("output", exist_ok=True)
+            output_path = os.path.abspath(f"output/รายงานสรุปรายได้_{start_date}_ถึง_{end_date}.pdf")
+
+            generate_summary_report_pdf(start_date, end_date, orders, output_path)
+
+            # แสดง PDF ด้วย viewer
+            self.pdf_viewer = PDFViewer(output_path)
+            self.pdf_viewer.show()
+
+        except Exception as e:
+            logging.error(f"❌ เกิดข้อผิดพลาดในการสร้างรายงาน: {e}", exc_info=True)
+            QMessageBox.critical(self, "ผิดพลาด", f"ไม่สามารถสร้างรายงานได้: {e}")
