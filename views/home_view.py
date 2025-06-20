@@ -15,15 +15,16 @@ from utils.path_utils import resource_path
 from utils.generate_delivery_pdf import generate_delivery_pdf
 from utils.generate_quotation_pdf import generate_quotation_pdf
 from delegates.button_delegate import ModernButtonDelegate  
-from models.product_model import ProductModel 
 from views.add_product_dialog import AddProductDialog
 from views.edit_product_dialog import EditProductDialog
 from views.order_product_dialog import OrderProductDialog 
 from views.update_order_start_dialog import UpdateOrderStatusDialog  # ⬅️ new PDF generation utility
 from views.pdf_viewer import PDFViewer  # ⬅️ new PDF viewer
+from controllers.product_controller import ProductController
 from controllers.order_controller import OrderController
 from controllers.stock_controller import StockController
 from models.product_table_model import ProductTableModel 
+from models.product_model import ProductModel 
 from models.order_table_model import OrderTableModel  # ⬅️ new model
 from models.invoice_tab_model import InvoiceTableModel  # ⬅️ new invoice model
 
@@ -38,6 +39,8 @@ class HomeView(QMainWindow):
         self.showFullScreen()  # 👈 This line enables full-screen view
 
         self.orderController = OrderController()  # ⬅️ initialize controller
+        self.productController = ProductController()  # ⬅️ initialize product controller
+        self.stockController = StockController()  # ⬅️ initialize stock controller
 
         # === Widgets ===
         self.datetimeLabel: QLabel = self.findChild(QLabel, "datetimeLabel")
