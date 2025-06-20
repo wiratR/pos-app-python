@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from PyQt6.QtWidgets import (
     QMainWindow, QLabel, QGroupBox, QSpinBox,
-    QLineEdit, QPushButton, QMessageBox, QCalendarWidget, QTableView
+    QLineEdit, QPushButton, QMessageBox, QCalendarWidget, QTableView, QTabWidget
 )
 from PyQt6.QtCore import QTimer, QModelIndex
 from PyQt6.uic import loadUi
@@ -108,12 +108,16 @@ class HomeView(QMainWindow):
         self.invoice_model = InvoiceTableModel(order_model)
         self.tableView_invoices.setModel(self.invoice_model)
         self.tableView_invoices.resizeColumnsToContents()  # ปรับขนาดคอลัมน์อื่นก่อน
-        self.tableView_invoices.setColumnWidth(5, 140)     # ตั้งขนาดคอลัมน์ปุ่มใหม่
+        self.tableView_invoices.setColumnWidth(6, 140)     # ตั้งขนาดคอลัมน์ปุ่มใหม่
 
         # Delegate
         invoice_delegate = ModernButtonDelegate(self.tableView_invoices, label="📑 ใบเสร็จรับเงิน", color="#4CAF50")
         invoice_delegate.button_signal.clicked.connect(self.on_invoice_button_clicked)
-        self.tableView_invoices.setItemDelegateForColumn(5, invoice_delegate)
+        self.tableView_invoices.setItemDelegateForColumn(6, invoice_delegate)
+
+        # TabWidget control
+        self.tabWidget = self.findChild(QTabWidget, "tabWidget")  # ใช้ชื่อ object ใน .ui
+        self.tabWidget.currentChanged.connect(self.on_tab_changed)
 
         # === Clock update ===
         self.timer = QTimer(self)
@@ -262,38 +266,6 @@ class HomeView(QMainWindow):
         self.orderTableView.setColumnWidth(6, 140)     # ตั้งขนาดคอลัมน์ปุ่มใหม่
         self.orderTableView.setColumnWidth(7, 140)
 
-    # def on_delivery_note_clicked(self, row: int):
-    #     logging.info(f"🧾 เริ่มสร้างใบส่งของจากแถวที่: {row}")
-
-    #     model = self.orderTableView.model()
-    #     order = model.orders[row]
-
-    #     items = [
-    #         {"product": "สินค้า A", "qty": 2, "price": 50.0},
-    #         {"product": "สินค้า B", "qty": 1, "price": 100.0}
-    #     ]
-
-    #     try:
-    #         os.makedirs("output", exist_ok=True)
-    #         order_no = order.get("order_no", f"no-id-{datetime.now().timestamp()}")
-    #         # use resource_path
-    #         output_dir = os.path.abspath("output")
-    #         os.makedirs(output_dir, exist_ok=True)
-    #         output_path = os.path.join(output_dir, f"ใบส่งของ_{order_no}.pdf")
-    #         # output_path = os.path.join("output", f"ใบส่งของ_{order_no}.pdf")
-    #         logging.info(f"📄 สร้างไฟล์ PDF ที่: {output_path}")
-
-    #         generate_delivery_pdf(order, items, output_path)
-
-    #         logging.info("✅ สร้างใบส่งของ PDF เสร็จสมบูรณ์")
-
-    #         self.pdf_viewer = PDFViewer(output_path)
-    #         self.pdf_viewer.show()
-
-    #     except Exception as e:
-    #         logging.error(f"❌ เกิดข้อผิดพลาดขณะสร้างใบส่งของ: {e}", exc_info=True)
-    #         QMessageBox.critical(self, "ผิดพลาด", f"ไม่สามารถสร้างใบส่งของได้: {e}")
-
     def on_delivery_note_clicked(self, row: int):
         logging.info(f"🧾 เริ่มสร้างใบส่งของจากแถวที่: {row}")
         model = self.orderTableView.model()
@@ -418,4 +390,16 @@ class HomeView(QMainWindow):
 
                 # รีเฟรชข้อมูลใหม่
                 self.load_order_data()
+
+    def on_tab_changed(self, index):
+        tab_name = self.tabWidget.tabText(index)
+        logging.info(f"🔄 เปลี่ยนแท็บไปที่: {tab_name}")
+
+        if tab_name == "ใบส่งของ":
+            self.load_order_data()
+
+        elif tab_name == "ใบกำกับภาษี":
+            self.invoice_model.refresh_data()  # สร้างเมธอดนี้ใน `InvoiceTableModel` ถ้ายังไม่มี
+            self.tableView_invoices.resizeColumnsToContents()
+            self.tableView_invoices.setColumnWidth(6, 140)     # ตั้งขนาดคอลัมน์ปุ่มใหม่
 

@@ -88,20 +88,26 @@ class OrderModel:
         conn = self.connect()
         cursor = conn.cursor()
 
+        if new_status == 'paid':
+            complete_date = datetime.now().strftime('%Y-%m-%d')
+        else:
+            complete_date = '1970-01-01'
+
         cursor.execute("""
             UPDATE orders
-            SET order_payment_status = ?
+            SET order_payment_status = ?, payment_complete_date = ?
             WHERE order_no = ?
-        """, (new_status, order_no))
+        """, (new_status, complete_date, order_no))
 
         conn.commit()
         conn.close()
+
 
     def get_paid_orders(self):
         conn = self.connect()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT orders.order_no, orders.order_date, orders.delivery_date, 
+            SELECT orders.order_no, orders.order_date, orders.delivery_date, orders.payment_complete_date, 
                 customers.company_name, orders.total_amount
             FROM orders
             JOIN customers ON orders.customer_id = customers.id
@@ -120,6 +126,7 @@ class OrderModel:
                 o.order_no,
                 o.order_date,
                 o.delivery_date,
+                o.payment_complete_date,
                 o.total_amount,
                 c.company_name,
                 c.company_address,
@@ -138,13 +145,14 @@ class OrderModel:
                 "order_no": row[0],
                 "order_date": row[1],
                 "delivery_date": row[2],
-                "total_amount": row[3],
-                "company_name": row[4],
-                "company_address": row[5],
-                "contact_name": row[6],
-                "phone": row[7],
-                "email": row[8],
-                "tax_id": row[9],
+                "payment_complete_date": row[3],
+                "total_amount": row[4],
+                "company_name": row[5],
+                "company_address": row[6],
+                "contact_name": row[7],
+                "phone": row[8],
+                "email": row[9],
+                "tax_id": row[10],
             }
         return None
 

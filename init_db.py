@@ -44,7 +44,8 @@ def initialize_database():
             delivery_date TEXT NOT NULL,
             customer_id INTEGER NOT NULL,
             total_amount REAL NOT NULL,
-            order_payment_status TEXT CHECK(order_payment_status IN ('paid', 'unpaid', 'pending','cancelled')) DEFAULT 'unpaid',
+            order_payment_status TEXT CHECK(order_payment_status IN ('paid', 'unpaid', 'pending', 'cancelled')) DEFAULT 'unpaid',
+            payment_complete_date TEXT DEFAULT '1970-01-01',  -- 🔘 Default คือ 1 มกราคม 1970
             FOREIGN KEY(customer_id) REFERENCES customers(id)
         )
     """)
